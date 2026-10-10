@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, csrf, empty, class_selects, status with context %}
+{% block title %}Mark Attendance{% endblock %}
+{% block content %}
+<h3 class="page-title mb-3">Mark Attendance</h3>
+<div class="card mb-3"><div class="card-body">
+  <form method="get" class="row g-2 align-items-end">
+    {{ class_selects(dept, year, section) }}
+    <div class="col-md-2"><label class="form-label">Date</label><input type="date" class="form-control" name="date" value="{{ day.isoformat() }}" max="{{ today.isoformat() }}" required></div>
+    <div class="col-md-2"><button class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Load class</button></div>
+  </form>
+</div></div>
+
+{% if holiday %}
+  <div class="alert alert-info"><i class="bi bi-calendar-x me-1"></i><strong>{{ day.strftime('%d %b %Y') }}</strong> is a holiday ({{ holiday.reason }}). Attendance cannot be marked.</div>
+{% elif not selected %}
+  <div class="card"><div class="card-body">{{ empty('funnel', 'Choose a class', 'Select department, year, section and date, then click "Load class".') }}</div></div>
+{% elif not students %}
+  <div class="card"><div class="card-body">{{ empty('people', 'No active students in this class', 'Add students first.') }}</div></div>
+{% else %}
+<form method="post" id="markForm" class="needs-validation" novalidate>
+  {{ csrf() }}
+  <input type="hidden" name="department" value="{{ dept }}"><input type="hidden" name="year" value="{{ year }}">
+  <input type="hidden" name="section" value="{{ section }}"><input type="hidden" name="date" value="{{ day.isoformat() }}">
+  <div class="card"><div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+      <div><h5 class="mb-0">{{ dept }} · Year {{ year }} · Section {{ section }}</h5>
+        <span class="text-muted">{{ day.strftime('%A, %d %B %Y') }} · {{ students|length }} students
+          {% if existing %}<span class="badge text-bg-warning ms-1">{{ existing|length }} already saved</span>{% endif %}</span></div>
+      <div class="btn-group">
+        <button type="button" class="btn btn-outline-success btn-sm" data-bulk="Present"><i class="bi bi-check-all me-1"></i>All Present</button>
+        <button type="button" class="btn btn-outline-danger btn-sm" data-bulk="Absent"><i class="bi bi-x-lg me-1"></i>All Absent</button>
+      </div>
+    </div>
+
+    {% if existing %}
+    <div class="alert alert-warning d-flex align-items-start">
+      <div class="form-check"><input class="form-check-input" type="checkbox" name="confirm_edit" id="confirmEdit" value="1">
+        <label class="form-check-label" for="confirmEdit"><strong>I want to edit saved attendance.</strong>
+          Previously saved statuses are shown below. Any change is recorded in the audit log.</label></div>
+    </div>
+    {% endif %}
+
+    <div class="table-responsive"><table class="table align-middle">
+      <thead><tr><th>#</th><th>Student</th><th>Roll No</th><th>Saved status</th><th class="text-center">Present</th><th class="text-center">Absent</th></tr></thead>
+      <tbody>
+      {% for s in students %}
+        {% set cur = existing[s.id].status if s.id in existing else 'Present' %}
+        <tr class="mark-row">
+          <td>{{ loop.index }}</td>
+          <td><div class="d-flex align-items-center">{{ avatar(s.user) }}<span class="ms-2 fw-semibold">{{ s.full_name }}</span></div></td>
+          <td>{{ s.roll_number }}</td>
+          <td>{% if s.id in existing %}{{ status(existing[s.id].status) }}{% else %}<span class="text-muted small">Not marked</span>{% endif %}</td>
+          <td class="text-center"><input class="form-check-input status-radio" type="radio" name="status_{{ s.id }}" value="Present" {{ 'checked' if cur == 'Present' }} {{ 'disabled' if existing }} required></td>
+          <td class="text-center"><input class="form-check-input status-radio" type="radio" name="status_{{ s.id }}" value="Absent" {{ 'checked' if cur == 'Absent' }} {{ 'disabled' if existing }}></td>
+        </tr>
+      {% endfor %}
+      </tbody></table></div>
+
+    <div class="row g-2 align-items-end">
+      <div class="col-md-8"><label class="form-label">Note (optional)</label><input class="form-control" name="note" maxlength="200" placeholder="e.g. Corrected after parent call"></div>
+      <div class="col-md-4"><button class="btn btn-primary w-100" id="saveBtn" type="submit" data-loading="Saving…" {{ 'disabled' if existing }}><i class="bi bi-save me-1"></i>Save attendance</button></div>
+    </div>
+  </div></div>
+</form>
+{% if existing %}
+<script>
+  // Saved attendance is locked until the faculty confirms they want to edit it.
+  document.getElementById('confirmEdit').addEventListener('change', function () {
+    document.querySelectorAll('.status-radio').forEach(r => r.disabled = !this.checked);
+    document.getElementById('saveBtn').disabled = !this.checked;
+  });
+</script>
+{% endif %}
+{% endif %}
+{% endblock %}

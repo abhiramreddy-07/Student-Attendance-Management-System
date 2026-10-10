@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, empty, pager, status, class_selects with context %}
+{% block title %}Attendance History{% endblock %}
+{% block content %}
+<h3 class="page-title mb-3">Attendance History</h3>
+<div class="card mb-3"><div class="card-body">
+  <form method="get" class="row g-2 align-items-end">
+    {{ class_selects(dept, year, section, required=False) }}
+    <div class="col-md-4"><label class="form-label">Search</label><input class="form-control" name="q" value="{{ q }}" placeholder="Name or roll number"></div>
+    <div class="col-md-2"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">All</option>
+      <option {{ 'selected' if status == 'Present' }}>Present</option><option {{ 'selected' if status == 'Absent' }}>Absent</option></select></div>
+    <div class="col-md-2"><label class="form-label">From</label><input type="date" class="form-control" name="start" value="{{ start or '' }}"></div>
+    <div class="col-md-2"><label class="form-label">To</label><input type="date" class="form-control" name="end" value="{{ end or '' }}"></div>
+    <div class="col-md-2 d-flex gap-2"><button class="btn btn-primary flex-fill">Filter</button><a class="btn btn-light" href="{{ url_for('attendance.history') }}">Reset</a></div>
+  </form>
+</div></div>
+<div class="card"><div class="card-body">
+{% if pagination.items %}
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th>Date</th><th>Student</th><th>Class</th><th>Status</th><th>Source</th><th>Marked by</th><th>Updated</th><th class="text-end">Edit</th></tr></thead>
+    <tbody>{% for r in pagination.items %}<tr>
+      <td>{{ r.attendance_date.strftime('%d %b %Y') }}</td>
+      <td><a class="text-decoration-none fw-semibold" href="{{ url_for('students.view_student', student_id=r.student_id) }}">{{ r.student.full_name }}</a><br><small class="text-muted">{{ r.student.roll_number }}</small></td>
+      <td class="small">{{ r.student.department }}<br>Y{{ r.student.year }}-{{ r.student.section }}</td>
+      <td>{{ status(r.status) }}</td><td class="text-capitalize">{{ r.source }}</td>
+      <td>{{ r.marker.full_name if r.marker else '—' }}</td>
+      <td class="small text-muted">{{ r.updated_at.strftime('%d %b %H:%M') }}</td>
+      <td class="text-end"><button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal"
+          data-id="{{ r.id }}" data-name="{{ r.student.full_name }}" data-date="{{ r.attendance_date.strftime('%d %b %Y') }}" data-status="{{ r.status }}"><i class="bi bi-pencil"></i></button></td>
+    </tr>{% endfor %}</tbody></table></div>
+  {{ pager(pagination) }}
+{% else %}{{ empty('clock-history', 'No attendance records found', 'Try different filters.') }}{% endif %}
+</div></div>
+
+<div class="modal fade" id="editModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><form class="modal-content needs-validation" method="post" id="editForm" novalidate>
+  {{ csrf() }}
+  <div class="modal-header"><h5 class="modal-title">Edit attendance</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <p class="mb-3" id="editInfo"></p>
+    <label class="form-label">New status</label>
+    <select class="form-select mb-3" name="status" id="editStatus"><option>Present</option><option>Absent</option></select>
+    <label class="form-label">Reason for the change *</label>
+    <input class="form-control" name="note" required maxlength="200" placeholder="Required - saved in the audit log">
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary">Save change</button></div>
+</form></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById('editModal').addEventListener('show.bs.modal', function (e) {
+    const b = e.relatedTarget;
+    document.getElementById('editForm').action = "{{ url_for('attendance.edit_record', record_id=0) }}".replace(/0$/, b.dataset.id);
+    document.getElementById('editInfo').innerHTML = '<strong></strong> on <strong></strong>';
+    const s = document.getElementById('editInfo').querySelectorAll('strong');
+    s[0].textContent = b.dataset.name; s[1].textContent = b.dataset.date;
+    document.getElementById('editStatus').value = b.dataset.status;
+  });
+</script>
+{% endblock %}

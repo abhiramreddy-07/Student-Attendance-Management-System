@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="card login-card mx-auto"><div class="card-body p-4 p-md-5">
+  <div class="text-center mb-4">
+    <div class="display-5 text-primary"><i class="bi bi-mortarboard-fill"></i></div>
+    <h2 class="fw-bold mb-0">SAMS</h2>
+    <p class="text-muted">Student Attendance Management System</p>
+  </div>
+  <form method="post" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="btn-group w-100 mb-3" role="group" aria-label="Login as">
+      <input type="radio" class="btn-check" name="role" id="r-student" value="student" {{ 'checked' if role != 'admin' }}>
+      <label class="btn btn-outline-primary" for="r-student"><i class="bi bi-person me-1"></i>Student</label>
+      <input type="radio" class="btn-check" name="role" id="r-admin" value="admin" {{ 'checked' if role == 'admin' }}>
+      <label class="btn btn-outline-primary" for="r-admin"><i class="bi bi-person-badge me-1"></i>Admin / Faculty</label>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="identifier">Username or email</label>
+      <div class="input-group has-validation"><span class="input-group-text"><i class="bi bi-person"></i></span>
+        <input type="text" class="form-control" id="identifier" name="identifier" required autofocus autocomplete="username"
+               value="{{ request.form.get('identifier', '') }}">
+        <div class="invalid-feedback">Please enter your username or email.</div></div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="password">Password</label>
+      <div class="input-group has-validation"><span class="input-group-text"><i class="bi bi-lock"></i></span>
+        <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="#password" aria-label="Show or hide password"><i class="bi bi-eye"></i></button>
+        <div class="invalid-feedback">Please enter your password.</div></div>
+    </div>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" name="remember" id="remember">
+      <label class="form-check-label" for="remember">Remember me on this device</label>
+    </div>
+    <button class="btn btn-primary w-100 py-2" type="submit" data-loading="Signing in…"><i class="bi bi-box-arrow-in-right me-1"></i>Sign in</button>
+  </form>
+  <p class="text-muted small text-center mt-4 mb-0">Accounts are created by your administrator. Forgot your password? Ask the faculty to reset it.</p>
+</div></div>
+{% endblock %}

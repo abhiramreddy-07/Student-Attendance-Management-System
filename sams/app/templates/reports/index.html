@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, class_selects with context %}
+{% block title %}Attendance Reports{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2 no-print">
+  <h3 class="page-title">Attendance Reports</h3>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-success" href="{{ url_for('reports.export_csv', **request.args) }}"><i class="bi bi-filetype-csv me-1"></i>Export CSV</a>
+    <button class="btn btn-outline-primary" onclick="window.print()"><i class="bi bi-printer me-1"></i>Print</button>
+  </div>
+</div>
+<div class="card mb-3 no-print"><div class="card-body">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label">Report type</label><select name="view" class="form-select">
+      <option value="student" {{ 'selected' if f.view == 'student' }}>Student-wise</option>
+      <option value="class" {{ 'selected' if f.view == 'class' }}>Class-wise</option>
+      <option value="department" {{ 'selected' if f.view == 'department' }}>Department-wise</option></select></div>
+    {{ class_selects(f.department, f.year, f.section, required=False) }}
+    <div class="col-md-3"><label class="form-label">Search</label><input class="form-control" name="q" value="{{ f.q }}" placeholder="Name or roll no (student view)"></div>
+    <div class="col-md-3"><label class="form-label">From</label><input type="date" class="form-control" name="start" value="{{ f.start or '' }}"></div>
+    <div class="col-md-3"><label class="form-label">To</label><input type="date" class="form-control" name="end" value="{{ f.end or '' }}"></div>
+    <div class="col-md-3 d-flex gap-2"><button class="btn btn-primary flex-fill"><i class="bi bi-funnel me-1"></i>Generate</button><a class="btn btn-light" href="{{ url_for('reports.index') }}">Reset</a></div>
+  </form>
+</div></div>
+
+<div class="card"><div class="card-body">
+  <div class="mb-3">
+    <h5 class="mb-0">SAMS · {{ {'student':'Student-wise','class':'Class-wise','department':'Department-wise'}[f.view] }} Attendance Report</h5>
+    <small class="text-muted">Period: {{ f.start.strftime('%d %b %Y') if f.start else 'beginning' }} – {{ f.end.strftime('%d %b %Y') if f.end else 'today' }}
+      {% if f.department %} · {{ f.department }}{% endif %}{% if f.year %} · Year {{ f.year }}{% endif %}{% if f.section %} · Sec {{ f.section }}{% endif %}
+      · Generated {{ generated.strftime('%d %b %Y') }} · Holidays excluded</small>
+  </div>
+  {% if rows %}
+  <div class="table-responsive"><table class="table table-bordered table-sm align-middle mb-0">
+    <thead class="table-light"><tr>{% for h in headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for r in rows %}<tr>
+      {% for c in r %}{% if loop.last %}<td class="fw-semibold {{ 'text-danger' if c < config.LOW_ATTENDANCE_THRESHOLD and r[-2] > 0 else 'text-success' if r[-2] > 0 }}">{{ '%.2f'|format(c) }}%</td>
+      {% else %}<td>{{ c }}</td>{% endif %}{% endfor %}</tr>{% endfor %}</tbody>
+    <tfoot class="table-light fw-bold"><tr>
+      <td colspan="{{ headers|length - 4 }}">TOTAL ({{ totals.rows }} rows)</td>
+      <td>Present: {{ totals.present }}</td><td>Absent: {{ totals.absent }}</td><td>Records: {{ totals.records }}</td><td>{{ '%.2f'|format(totals.percentage) }}%</td></tr></tfoot>
+  </table></div>
+  <p class="small text-muted mt-2 mb-0">Attendance % = Present ÷ (Present + Absent) × 100. Values below {{ config.LOW_ATTENDANCE_THRESHOLD }}% are shown in red.</p>
+  {% else %}{{ empty('bar-chart', 'No data for these filters', 'Adjust the filters or add students and attendance first.') }}{% endif %}
+</div></div>
+{% endblock %}

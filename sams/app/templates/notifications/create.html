@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Create Notification{% endblock %}
+{% block content %}
+<h3 class="page-title mb-3">Send Notification</h3>
+<div class="card" style="max-width:820px"><div class="card-body p-4">
+<form method="post" class="needs-validation" novalidate>{{ csrf() }}
+  <div class="mb-3"><label class="form-label">Title *</label><input class="form-control" name="title" value="{{ data.title or '' }}" required maxlength="150"></div>
+  <div class="mb-3"><label class="form-label">Message *</label><textarea class="form-control" name="message" rows="5" required>{{ data.message or '' }}</textarea></div>
+  <label class="form-label">Send to *</label>
+  <div class="btn-group w-100 mb-3">
+    {% for v, label, icon in [('all','Everyone','megaphone'),('class','Class / group','people'),('student','One student','person')] %}
+      <input type="radio" class="btn-check target-radio" name="target_type" id="t-{{ v }}" value="{{ v }}" {{ 'checked' if data.target_type == v }}>
+      <label class="btn btn-outline-primary" for="t-{{ v }}"><i class="bi bi-{{ icon }} me-1"></i>{{ label }}</label>{% endfor %}
+  </div>
+  <div id="classBox" class="row g-2 mb-3 d-none">
+    <div class="col-md-5"><select class="form-select" name="department"><option value="">Department…</option>
+      {% for d in DEPARTMENTS %}<option {{ 'selected' if d == data.department }}>{{ d }}</option>{% endfor %}</select></div>
+    <div class="col-md-3"><select class="form-select" name="year"><option value="">All years</option>
+      {% for y in YEARS %}<option value="{{ y }}" {{ 'selected' if y == data.year }}>Year {{ y }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><select class="form-select" name="section"><option value="">All sections</option>
+      {% for s in SECTIONS %}<option {{ 'selected' if s == data.section }}>{{ s }}</option>{% endfor %}</select></div>
+  </div>
+  <div id="studentBox" class="mb-3 d-none"><select class="form-select" name="student_id"><option value="">Choose student…</option>
+    {% for s in students %}<option value="{{ s.id }}" {{ 'selected' if s.id == data.student_id }}>{{ s.roll_number }} – {{ s.full_name }} ({{ s.department }} Y{{ s.year }}-{{ s.section }})</option>{% endfor %}</select></div>
+  <button class="btn btn-primary" data-loading="Sending…"><i class="bi bi-send me-1"></i>Send notification</button>
+  <a class="btn btn-light ms-2" href="{{ url_for('notifications.index') }}">Cancel</a>
+</form></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+  function sync() {
+    const t = document.querySelector('.target-radio:checked').value;
+    document.getElementById('classBox').classList.toggle('d-none', t !== 'class');
+    document.getElementById('studentBox').classList.toggle('d-none', t !== 'student');
+  }
+  document.querySelectorAll('.target-radio').forEach(r => r.addEventListener('change', sync)); sync();
+</script>
+{% endblock %}

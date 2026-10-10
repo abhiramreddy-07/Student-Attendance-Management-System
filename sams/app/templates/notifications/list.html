@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, empty, pager %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h3 class="page-title">Notifications</h3>
+  {% if current_user.is_admin %}<a class="btn btn-primary" href="{{ url_for('notifications.create') }}"><i class="bi bi-send me-1"></i>New Notification</a>
+  {% else %}<div class="d-flex gap-2">
+    <a class="btn btn-sm {{ 'btn-primary' if not only_unread else 'btn-outline-primary' }}" href="{{ url_for('notifications.index') }}">All</a>
+    <a class="btn btn-sm {{ 'btn-primary' if only_unread else 'btn-outline-primary' }}" href="{{ url_for('notifications.index', filter='unread') }}">Unread{% if unread_count %} ({{ unread_count }}){% endif %}</a>
+    <form method="post" action="{{ url_for('notifications.mark_all_read') }}">{{ csrf() }}<button class="btn btn-sm btn-outline-secondary"><i class="bi bi-check2-all me-1"></i>Mark all read</button></form></div>{% endif %}
+</div>
+<div class="card"><div class="card-body">
+{% if pagination.items %}
+<div class="list-group list-group-flush">
+  {% for n in pagination.items %}
+  {% set unread = (not current_user.is_admin) and n.id not in read_ids %}
+  <div class="list-group-item px-0 d-flex justify-content-between align-items-start gap-3">
+    <div class="flex-grow-1">
+      <a class="text-decoration-none {{ 'fw-bold' if unread }}" href="{{ url_for('notifications.detail', notification_id=n.id) }}">
+        {% if unread %}<span class="badge text-bg-primary me-1">New</span>{% endif %}{{ n.title }}</a>
+      <div class="text-muted small text-truncate" style="max-width:640px">{{ n.message }}</div>
+      <div class="small text-muted mt-1"><i class="bi bi-people me-1"></i>{{ n.target_label }} · {{ n.created_at.strftime('%d %b %Y %H:%M') }}{% if n.author %} · {{ n.author.full_name }}{% endif %}</div>
+    </div>
+    {% if current_user.is_admin %}
+      <form method="post" action="{{ url_for('notifications.delete', notification_id=n.id) }}" data-confirm="Delete this notification for all recipients?">{{ csrf() }}
+        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+    {% elif unread %}
+      <form method="post" action="{{ url_for('notifications.mark_read', notification_id=n.id) }}">{{ csrf() }}<button class="btn btn-sm btn-outline-secondary">Mark read</button></form>
+    {% endif %}
+  </div>{% endfor %}
+</div>{{ pager(pagination) }}
+{% else %}{{ empty('bell-slash', 'No notifications', 'You are all caught up.' if not current_user.is_admin else 'Send your first notification.') }}{% endif %}
+</div></div>
+{% endblock %}

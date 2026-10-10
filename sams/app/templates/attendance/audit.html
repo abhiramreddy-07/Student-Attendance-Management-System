@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, pager, status %}
+{% block title %}Audit Log{% endblock %}
+{% block content %}
+<h3 class="page-title mb-3">Attendance Audit Log</h3>
+<div class="card"><div class="card-body">
+{% if pagination.items %}
+<div class="table-responsive"><table class="table table-sm align-middle mb-0">
+  <thead><tr><th>When</th><th>Student</th><th>Attendance date</th><th>Change</th><th>Changed by</th><th>Note</th></tr></thead>
+  <tbody>{% for l in pagination.items %}<tr>
+    <td class="small">{{ l.changed_at.strftime('%d %b %Y %H:%M') }}</td>
+    <td>{{ l.student.full_name }}<br><small class="text-muted">{{ l.student.roll_number }}</small></td>
+    <td>{{ l.attendance_date.strftime('%d %b %Y') }}</td>
+    <td>{% if l.old_status %}{{ status(l.old_status) }} <i class="bi bi-arrow-right mx-1"></i>{% else %}<small class="text-muted me-1">new</small>{% endif %}{{ status(l.new_status) }}</td>
+    <td>{{ l.user.full_name if l.user else '—' }}</td><td class="small">{{ l.note or '' }}</td></tr>{% endfor %}</tbody></table></div>
+{{ pager(pagination) }}
+{% else %}{{ empty('journal-text', 'No changes logged yet') }}{% endif %}
+</div></div>
+{% endblock %}

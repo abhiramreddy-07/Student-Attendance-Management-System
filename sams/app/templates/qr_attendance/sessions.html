@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, pager %}
+{% block title %}QR Sessions{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3"><h3 class="page-title">QR Attendance Sessions</h3>
+  <a class="btn btn-primary" href="{{ url_for('qr_attendance.new_session') }}"><i class="bi bi-qr-code me-1"></i>New QR Session</a></div>
+<div class="card"><div class="card-body">
+{% if pagination.items %}<div class="table-responsive"><table class="table table-hover align-middle mb-0">
+  <thead><tr><th>Class</th><th>Date</th><th>Session</th><th>Created</th><th>Expires</th><th>State</th><th></th></tr></thead><tbody>
+  {% for s in pagination.items %}<tr><td>{{ s.class_label }}</td><td>{{ s.session_date.strftime('%d %b %Y') }}</td><td>{{ s.session_name }}</td>
+    <td class="small">{{ s.created_at.strftime('%d %b %H:%M') }}<br>{{ s.creator.full_name }}</td><td class="small">{{ s.expires_at.strftime('%d %b %H:%M') }}</td>
+    <td><span class="badge text-bg-{{ {'Open':'success','Expired':'secondary','Closed':'dark'}[s.state] }}">{{ s.state }}</span></td>
+    <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('qr_attendance.show_session', session_id=s.id) }}">Open</a></td></tr>{% endfor %}
+</tbody></table></div>{{ pager(pagination) }}
+{% else %}{{ empty('qr-code', 'No QR sessions yet', 'Create one to let students scan their attendance.') }}{% endif %}
+</div></div>
+{% endblock %}

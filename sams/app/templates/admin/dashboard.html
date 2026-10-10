@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, status %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div><h3 class="page-title">Dashboard</h3><span class="text-muted">{{ today.strftime('%A, %d %B %Y') }}</span></div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('students.add_student') }}" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Add Student</a>
+    <a href="{{ url_for('attendance.mark') }}" class="btn btn-outline-primary"><i class="bi bi-check2-square me-1"></i>Mark Attendance</a>
+    <a href="{{ url_for('qr_attendance.new_session') }}" class="btn btn-outline-primary"><i class="bi bi-qr-code me-1"></i>QR Session</a>
+  </div>
+</div>
+{% if holiday_today %}<div class="alert alert-info"><i class="bi bi-calendar-x me-1"></i>Today is marked as a holiday / non-working day.</div>{% endif %}
+
+<div class="row g-3 mb-3">
+  {% for label, val, icon, color in [
+      ('Total Students', overview.total_students, 'people', 'primary'),
+      ('Present Today', overview.present, 'check-circle', 'success'),
+      ('Absent Today', overview.absent, 'x-circle', 'danger'),
+      ('Attendance Today', '%.1f%%'|format(overview.percentage), 'percent', 'warning')] %}
+  <div class="col-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body d-flex align-items-center">
+    <div class="icon bg-{{ color }}-subtle text-{{ color }} me-3"><i class="bi bi-{{ icon }}"></i></div>
+    <div><div class="text-muted small">{{ label }}</div><div class="value">{{ val }}</div></div>
+  </div></div></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-8"><div class="card h-100"><div class="card-body">
+    <h6 class="mb-3">Attendance trend (last 14 days)</h6>
+    {% if trend %}<canvas id="trendChart" height="110"></canvas>
+    {% else %}{{ empty('graph-up', 'No attendance data yet', 'Mark attendance to see the trend.') }}{% endif %}
+  </div></div></div>
+  <div class="col-lg-4"><div class="card h-100"><div class="card-body">
+    <h6 class="mb-3">Students by department</h6>
+    {% if departments %}<canvas id="deptChart" height="200"></canvas>
+      <table class="table table-sm mt-3 mb-0"><tbody>
+      {% for d in departments %}<tr><td>{{ d.department }}</td><td class="text-end fw-semibold">{{ d.students }}</td></tr>{% endfor %}
+      </tbody></table>
+    {% else %}{{ empty('building', 'No students yet', 'Add students to see department statistics.') }}{% endif %}
+  </div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7"><div class="card h-100"><div class="card-body">
+    <div class="d-flex justify-content-between"><h6>Recent attendance activity</h6><a href="{{ url_for('attendance.audit') }}" class="small">View all</a></div>
+    {% if recent %}
+    <div class="table-responsive"><table class="table table-sm align-middle mb-0"><tbody>
+      {% for r in recent %}<tr>
+        <td><strong>{{ r.student.full_name }}</strong><br><small class="text-muted">{{ r.student.roll_number }} · {{ r.attendance_date.strftime('%d %b') }}</small></td>
+        <td>{{ status(r.new_status) }}{% if r.old_status %} <small class="text-muted">was {{ r.old_status }}</small>{% endif %}</td>
+        <td class="text-end small text-muted">{{ r.user.full_name if r.user else '—' }}<br>{{ r.changed_at.strftime('%d %b %H:%M') }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}{{ empty('clock-history', 'No activity yet') }}{% endif %}
+  </div></div></div>
+  <div class="col-lg-5"><div class="card h-100"><div class="card-body">
+    <div class="d-flex justify-content-between"><h6>Recent notifications</h6><a href="{{ url_for('notifications.create') }}" class="small">Send new</a></div>
+    {% if notifications %}<ul class="list-group list-group-flush">
+      {% for n in notifications %}<li class="list-group-item px-0"><a class="fw-semibold text-decoration-none" href="{{ url_for('notifications.detail', notification_id=n.id) }}">{{ n.title }}</a>
+        <div class="small text-muted">{{ n.target_label }} · {{ n.created_at.strftime('%d %b %H:%M') }}</div></li>{% endfor %}
+    </ul>{% else %}{{ empty('bell-slash', 'No notifications sent') }}{% endif %}
+  </div></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  const trend = {{ trend|tojson }};
+  const depts = {{ departments|tojson }};
+  if (trend.length) new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: trend.map(t => t.date), datasets: [{ label: 'Attendance %', data: trend.map(t => t.percentage),
+      borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.12)', fill: true, tension: .3, pointRadius: 4 }] },
+    options: { scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+  });
+  if (depts.length) new Chart(document.getElementById('deptChart'), {
+    type: 'doughnut',
+    data: { labels: depts.map(d => d.department), datasets: [{ data: depts.map(d => d.students),
+      backgroundColor: ['#4f46e5', '#22c55e', '#f59e0b', '#ef4444', '#06b6d4'] }] },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+</script>
+{% endblock %}

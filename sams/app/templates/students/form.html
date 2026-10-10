@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import avatar, csrf %}
+{% block title %}{{ 'Edit' if student else 'Add' }} Student{% endblock %}
+{% block content %}
+<h3 class="page-title mb-3">{{ 'Edit Student' if student else 'Add Student' }}</h3>
+<div class="card"><div class="card-body p-4">
+<form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+  {{ csrf() }}
+  <div class="row g-3">
+    <div class="col-md-4"><label class="form-label">Student ID *</label>
+      <input class="form-control" name="student_code" value="{{ data.student_code }}" required maxlength="20" {{ 'readonly' if student }}>
+      {% if not student %}<div class="form-text">Also used as the login username.</div>{% endif %}</div>
+    <div class="col-md-8"><label class="form-label">Full name *</label>
+      <input class="form-control" name="full_name" value="{{ data.full_name }}" required maxlength="120"></div>
+    <div class="col-md-4"><label class="form-label">Roll number *</label>
+      <input class="form-control" name="roll_number" value="{{ data.roll_number }}" required maxlength="30"></div>
+    <div class="col-md-4"><label class="form-label">Email *</label>
+      <input type="email" class="form-control" name="email" value="{{ data.email }}" required maxlength="120"></div>
+    <div class="col-md-4"><label class="form-label">Mobile number</label>
+      <input class="form-control" name="mobile" value="{{ data.mobile }}" pattern="\+?[0-9]{10,15}" placeholder="10-15 digits">
+      <div class="invalid-feedback">Enter 10-15 digits.</div></div>
+    <div class="col-md-4"><label class="form-label">Department *</label>
+      <select class="form-select" name="department" required><option value="">Select…</option>
+        {% for d in DEPARTMENTS %}<option {{ 'selected' if d == data.department }}>{{ d }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><label class="form-label">Academic year *</label>
+      <select class="form-select" name="year" required>
+        {% for y in YEARS %}<option value="{{ y }}" {{ 'selected' if y == data.year }}>Year {{ y }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><label class="form-label">Section *</label>
+      <select class="form-select" name="section" required><option value="">Select…</option>
+        {% for s in SECTIONS %}<option {{ 'selected' if s == data.section }}>{{ s }}</option>{% endfor %}</select></div>
+    <div class="col-md-6"><label class="form-label">Profile photo</label>
+      <input type="file" class="form-control" name="photo" accept="image/png,image/jpeg,image/gif">
+      <div class="form-text">PNG, JPG or GIF, max 2 MB.{% if student and student.photo %} Uploading a new photo replaces the current one.{% endif %}</div></div>
+    {% if not student %}
+    <div class="col-md-6"><label class="form-label">Initial password</label>
+      <input class="form-control" name="password" minlength="8" autocomplete="off" placeholder="Leave blank to auto-generate">
+      <div class="form-text">Min 8 characters with letters and numbers. An auto-generated password is shown once after saving.</div></div>
+    {% endif %}
+  </div>
+  <div class="mt-4 d-flex gap-2">
+    <button class="btn btn-primary" type="submit" data-loading="Saving…"><i class="bi bi-check2 me-1"></i>{{ 'Save changes' if student else 'Create student' }}</button>
+    <a class="btn btn-light" href="{{ url_for('students.view_student', student_id=student.id) if student else url_for('students.list_students') }}">Cancel</a>
+  </div>
+</form></div></div>
+{% endblock %}

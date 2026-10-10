@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty, pager, status %}
+{% block title %}My Attendance{% endblock %}
+{% block content %}
+<h3 class="page-title mb-3">My Attendance</h3>
+<div class="card mb-3"><div class="card-body">
+  <form class="row g-2 align-items-end mb-3" method="get">
+    <div class="col-sm-4"><label class="form-label small mb-0">From</label><input type="date" class="form-control" name="start" value="{{ start or '' }}"></div>
+    <div class="col-sm-4"><label class="form-label small mb-0">To</label><input type="date" class="form-control" name="end" value="{{ end or '' }}"></div>
+    <div class="col-sm-4 d-flex gap-2"><button class="btn btn-primary flex-fill">Apply</button><a class="btn btn-light" href="{{ url_for('portal.history') }}">Reset</a></div>
+  </form>
+  <div class="row text-center g-2">
+    <div class="col-3"><div class="text-muted small">Present</div><div class="fs-3 fw-bold text-success">{{ summary.present }}</div></div>
+    <div class="col-3"><div class="text-muted small">Absent</div><div class="fs-3 fw-bold text-danger">{{ summary.absent }}</div></div>
+    <div class="col-3"><div class="text-muted small">Working days</div><div class="fs-3 fw-bold">{{ summary.total }}</div></div>
+    <div class="col-3"><div class="text-muted small">Percentage</div><div class="fs-3 fw-bold">{{ '%.1f'|format(summary.percentage) }}%</div></div>
+  </div>
+</div></div>
+<div class="card"><div class="card-body">
+{% if pagination.items %}<div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Date</th><th>Day</th><th>Status</th><th>Method</th></tr></thead><tbody>
+  {% for r in pagination.items %}<tr><td>{{ r.attendance_date.strftime('%d %b %Y') }}</td><td>{{ r.attendance_date.strftime('%A') }}</td><td>{{ status(r.status) }}</td><td>{{ 'QR scan' if r.source == 'qr' else 'Marked by faculty' }}</td></tr>{% endfor %}
+</tbody></table></div>{{ pager(pagination) }}
+{% else %}{{ empty('calendar-x', 'No records for this period') }}{% endif %}
+</div></div>
+{% endblock %}

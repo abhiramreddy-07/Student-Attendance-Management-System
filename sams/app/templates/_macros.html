@@ -1,0 +1,55 @@
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro avatar(user, size='') %}
+  {% if user.photo %}<img class="avatar {{ size }}" src="{{ url_for('static', filename='uploads/' ~ user.photo) }}" alt="{{ user.full_name }}">
+  {% else %}<span class="avatar {{ size }}">{{ user.full_name[:1]|upper }}</span>{% endif %}
+{% endmacro %}
+
+{% macro status(s) %}<span class="status-pill status-{{ s|lower }}">{{ s }}</span>{% endmacro %}
+
+{% macro pct_badge(summary, threshold=75) %}
+  {% if summary.total == 0 %}<span class="badge text-bg-secondary">No records</span>
+  {% else %}<span class="badge {{ 'text-bg-danger' if summary.percentage < threshold else 'text-bg-success' }}">{{ '%.1f'|format(summary.percentage) }}%</span>{% endif %}
+{% endmacro %}
+
+{% macro empty(icon, title, text='') %}
+  <div class="empty-state"><i class="bi bi-{{ icon }}"></i><h5 class="mt-2">{{ title }}</h5><p class="mb-0">{{ text }}</p></div>
+{% endmacro %}
+
+{% macro class_selects(dept, year, section, required=True) %}
+  <div class="col-md-4"><label class="form-label">Department</label>
+    <select name="department" class="form-select" {{ 'required' if required }}>
+      <option value="">Select department</option>
+      {% for d in DEPARTMENTS %}<option value="{{ d }}" {{ 'selected' if d == dept }}>{{ d }}</option>{% endfor %}
+    </select></div>
+  <div class="col-md-2 col-6"><label class="form-label">Year</label>
+    <select name="year" class="form-select" {{ 'required' if required }}>
+      <option value="">Year</option>
+      {% for y in YEARS %}<option value="{{ y }}" {{ 'selected' if y == year }}>Year {{ y }}</option>{% endfor %}
+    </select></div>
+  <div class="col-md-2 col-6"><label class="form-label">Section</label>
+    <select name="section" class="form-select" {{ 'required' if required }}>
+      <option value="">Section</option>
+      {% for s in SECTIONS %}<option value="{{ s }}" {{ 'selected' if s == section }}>Section {{ s }}</option>{% endfor %}
+    </select></div>
+{% endmacro %}
+
+{% macro pager(p) %}
+  {% if p.pages > 1 %}
+  {% set args = request.args.to_dict() %}{% set _ = args.pop('page', None) %}
+  <nav class="no-print"><ul class="pagination pagination-sm justify-content-center mb-0 mt-3">
+    <li class="page-item {{ 'disabled' if not p.has_prev }}"><a class="page-link" href="{{ url_for(request.endpoint, page=p.prev_num, **args) if p.has_prev else '#' }}">&laquo;</a></li>
+    {% for n in p.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if n %}<li class="page-item {{ 'active' if n == p.page }}"><a class="page-link" href="{{ url_for(request.endpoint, page=n, **args) }}">{{ n }}</a></li>
+      {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+    {% endfor %}
+    <li class="page-item {{ 'disabled' if not p.has_next }}"><a class="page-link" href="{{ url_for(request.endpoint, page=p.next_num, **args) if p.has_next else '#' }}">&raquo;</a></li>
+  </ul></nav>
+  <p class="text-center text-muted small mt-2 mb-0 no-print">Showing {{ p.first }}–{{ p.last }} of {{ p.total }}</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro nav_item(endpoint_prefix, href, icon, label, badge=0) %}
+  <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint and request.endpoint.startswith(endpoint_prefix) }}" href="{{ href }}">
+    <i class="bi bi-{{ icon }}"></i>{{ label }}{% if badge %}<span class="badge rounded-pill text-bg-danger ms-2">{{ badge }}</span>{% endif %}</a></li>
+{% endmacro %}
